@@ -41,17 +41,19 @@ public class App
 
 
         String line;
-        Integer currentIndex = 0;
-        // TODO adquiere correctamente solo la primera canción.
+        Integer currentIndex = -1;
+        // TODO adquiere correctamente solo la última canción.
         while (
                 (line = reader.readLine()) != null
         ){
+            //System.out.println(line.trim().split(" ")[0]);
             switch (
                     line.trim().split(" ")[0]
             ){
                 case "TRACK":
+                    currentIndex++;
                     cueFileDefinition.getTrackList().add(new Track());
-                    cueFileDefinition.getTrackList().get(currentIndex).setTrackNumber(currentIndex);
+                    cueFileDefinition.getTrackList().get(currentIndex).setTrackNumber(currentIndex+1);
                     break;
                 case "PERFORMER":
                     cueFileDefinition.getTrackList().get(currentIndex).setPerformer(
@@ -70,7 +72,7 @@ public class App
             }
         }
 
-        System.out.print(cueFileDefinition.toString());
+        //System.out.print(cueFileDefinition.toString());
 
 
 
