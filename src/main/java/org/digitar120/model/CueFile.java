@@ -1,4 +1,4 @@
-package org.digitar120.Model;
+package org.digitar120.model;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
