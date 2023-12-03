@@ -99,6 +99,10 @@ public class App
         }
 
         // EJECUCIÓN
+        // TIEMPO EN HH:MM:SS
+        // Comando a utilizar: ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
+        // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
+
         ExecutorService executor = Executors.newFixedThreadPool(1);
 
         ProcessBuilder builder = new ProcessBuilder();
@@ -112,15 +116,8 @@ public class App
 
         try {
             int exitCode = process.waitFor();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        try {
             System.out.println(future.get());
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
