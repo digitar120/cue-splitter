@@ -1,14 +1,11 @@
 package org.digitar120;
 
 
-import jdk.jshell.execution.Util;
 import org.digitar120.model.CueFile;
 
 import java.io.*;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,9 +13,6 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.Track;
-import static org.digitar120.util.UtilityMethods.*;
-
-import javax.sound.midi.SysexMessage;
 
 
 public class App {
@@ -101,14 +95,21 @@ public class App {
                     String offsetSeconds = offset.substring(3,5);
                     String offsetMilliseconds = offset.substring(6, 8);
 
-                    cueFileDefinition.getTrackList().get(currentIndex).setOffset(
-                            "00:"
-                            + offsetMinutes
-                            + ":"
-                            + offsetSeconds
-                            + "."
-                            + offsetMilliseconds
-                    );
+                    LocalTime timeOffset = LocalTime.MIN
+                            .plus(
+                                    Long.parseLong(offsetMinutes)
+                                    , ChronoUnit.MINUTES)
+                            .plus(
+                                    Long.parseLong(offsetSeconds)
+                                    , ChronoUnit.SECONDS
+                            )
+                            .plus(
+                                    Long.parseLong(offsetMilliseconds)
+                                    , ChronoUnit.MILLIS
+                            );
+
+                    cueFileDefinition.getTrackList().get(currentIndex).setTimeOffset(timeOffset);
+
                     break;
             }
         }

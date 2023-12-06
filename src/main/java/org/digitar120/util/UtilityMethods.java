@@ -21,6 +21,8 @@ public final class UtilityMethods {
     public static boolean verifyFileExistence(File directory, String filename){
         // Verificación si el directorio ya contiene un archivo. Útil para reemplazar la confirmación de ffmpeg, que es
         // omitida por la opción "-y"
+
+        // TODO: refactorizar como Optional
         if (
                 Arrays.asList(directory.list())
                         .contains(filename)
