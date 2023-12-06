@@ -1,9 +1,13 @@
 package org.digitar120;
 
 
+import jdk.jshell.execution.Util;
 import org.digitar120.model.CueFile;
 
 import java.io.*;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,12 +16,12 @@ import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.Track;
+import static org.digitar120.util.UtilityMethods.*;
 
 import javax.sound.midi.SysexMessage;
 
 
-public class App
-{
+public class App {
     private static class StreamGobbler implements Runnable {
         private InputStream inputStream;
         private Consumer<String> consumer;
@@ -28,14 +32,14 @@ public class App
         }
 
         @Override
-        public void run(){
+        public void run() {
             new BufferedReader(new InputStreamReader(inputStream))
                     .lines()
                     .forEach(consumer);
         }
     }
 
-    public static void main( String[] args ) throws IOException {
+    public static void main(String[] args) throws IOException {
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase()
                 .startsWith("windows");
@@ -47,7 +51,7 @@ public class App
 
         // Artista, álbum
         cueFileDefinition.setPerformer(readProperty(reader, cueFileDefinition, "PERFORMER ".length()));
-        cueFileDefinition.setTitle(readProperty(reader,cueFileDefinition,"TITLE ".length()));
+        cueFileDefinition.setTitle(readProperty(reader, cueFileDefinition, "TITLE ".length()));
         /* cueFileDefinition.setFileName(
                 StringUtils.strip(
                         reader.readLine()
@@ -58,12 +62,12 @@ public class App
         );*/
         String thirdLine = reader.readLine();
         String fileName = thirdLine.substring(
-                thirdLine.indexOf("\"")+1,
+                thirdLine.indexOf("\"") + 1,
                 StringUtils.ordinalIndexOf(thirdLine, "\"", 2)
-                );
+        );
         cueFileDefinition.setFileName(fileName);
 
-        String fileExtension = fileName.substring(fileName.lastIndexOf(".")+1);
+        String fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1);
         cueFileDefinition.setFileFormat(fileExtension);
 
 
@@ -71,15 +75,15 @@ public class App
         Integer currentIndex = -1;
         while (
                 (line = reader.readLine()) != null
-        ){
+        ) {
             //System.out.println(line.trim().split(" ")[0]);
             switch (
                     line.trim().split(" ")[0]
-            ){
+            ) {
                 case "TRACK":
                     currentIndex++;
                     cueFileDefinition.getTrackList().add(new Track());
-                    cueFileDefinition.getTrackList().get(currentIndex).setTrackNumber(currentIndex+1);
+                    cueFileDefinition.getTrackList().get(currentIndex).setTrackNumber(currentIndex + 1);
                     break;
                 case "PERFORMER":
                     cueFileDefinition.getTrackList().get(currentIndex).setPerformer(
@@ -92,24 +96,54 @@ public class App
                     );
                     break;
                 case "INDEX":
+                    String offset = line.trim().substring("INDEX 01 ".length());
+                    String offsetMinutes = offset.substring(0, 2);
+                    String offsetSeconds = offset.substring(3,5);
+                    String offsetMilliseconds = offset.substring(6, 8);
+
                     cueFileDefinition.getTrackList().get(currentIndex).setOffset(
-                            line.trim().substring("INDEX 01 ".length())
+                            "00:"
+                            + offsetMinutes
+                            + ":"
+                            + offsetSeconds
+                            + "."
+                            + offsetMilliseconds
                     );
+                    break;
             }
         }
 
         // EJECUCIÓN
         // TIEMPO EN HH:MM:SS
+        // Direcciones proveídas a comandos deben encerrarse en comillas simples
         // Comando a utilizar: ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
         // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
 
-        ExecutorService executor = Executors.newFixedThreadPool(1);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
 
         ProcessBuilder builder = new ProcessBuilder();
-        if (isWindows){
-            builder.command("powershell.exe", "echo", "'Echo Test'");
+        if (isWindows) {
+            builder.command(
+
+                    "powershell.exe",
+                    "ffmpeg.exe",
+                    "-y",
+                    "-v",
+                    "-i",
+                    "'.\\" + cueFileDefinition.getFileName() + "'",
+                    "-ss",
+                    "00:00:00",
+                    "-to",
+                    "00:03:09",
+                    "-c",
+                    "copy",
+                    cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle()
+
+            );
+            builder.directory(new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\"));
         }
-        builder.directory(new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\"));
+
         Process process = builder.start();
         StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
         Future<?> future = executor.submit(streamGobbler);
@@ -121,19 +155,10 @@ public class App
             throw new RuntimeException(e);
         }
 
-        /*
-        if (isWindows){
-            builder.directory(new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\"));
-            for (Track element: cueFileDefinition.getTrackList()){
-                builder.command()
-            }
-        }
-         */
-
-
         executor.shutdown();
         reader.close();
     }
+
 
     private static String readProperty(BufferedReader reader, CueFile cueFileDefinition, Integer propertyStart) throws IOException {
         return StringUtils.strip(
