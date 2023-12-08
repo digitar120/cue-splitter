@@ -14,6 +14,8 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.Track;
 
+import static org.digitar120.util.UtilityMethods.*;
+
 
 public class App {
     private static class StreamGobbler implements Runnable {
@@ -34,9 +36,9 @@ public class App {
     }
 
     public static void main(String[] args) throws IOException {
-        boolean isWindows = System.getProperty("os.name")
-                .toLowerCase()
-                .startsWith("windows");
+
+
+        File directory = new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\");
 
 
         // ADQUISICIÓN DE LOS DATOS DEL ARCHIVO
@@ -71,8 +73,10 @@ public class App {
                 (line = reader.readLine()) != null
         ) {
             //System.out.println(line.trim().split(" ")[0]);
+            line = line.trim(); // Para evitar ejecutar trim() en varios métodos después
+
             switch (
-                    line.trim().split(" ")[0]
+                    line.split(" ")[0] // Seleccionar la primera columna de cada línea
             ) {
                 case "TRACK":
                     currentIndex++;
@@ -81,16 +85,22 @@ public class App {
                     break;
                 case "PERFORMER":
                     cueFileDefinition.getTrackList().get(currentIndex).setPerformer(
-                            line.trim().substring("PERFORMER ".length())
+                            line.substring(
+                                    "PERFORMER ".length() +1
+                                    , StringUtils.lastIndexOf(line, "\"")
+                                    )
                     );
                     break;
                 case "TITLE":
                     cueFileDefinition.getTrackList().get(currentIndex).setTitle(
-                            line.trim().substring("TITLE ".length())
+                            line.substring(
+                                    "TITLE ".length() +1
+                                    , StringUtils.lastIndexOf(line, "\"")
+                            )
                     );
                     break;
                 case "INDEX":
-                    String offset = line.trim().substring("INDEX 01 ".length());
+                    String offset = line.substring("INDEX 01 ".length());
                     String offsetMinutes = offset.substring(0, 2);
                     String offsetSeconds = offset.substring(3,5);
                     String offsetMilliseconds = offset.substring(6, 8);
@@ -115,22 +125,42 @@ public class App {
         }
 
         // EJECUCIÓN
-        // TIEMPO EN HH:MM:SS
-        // Direcciones proveídas a comandos deben encerrarse en comillas simples
-        // Comando a utilizar: ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
+         //  ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
         // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
 
 
+        ProcessBuilder builder = defineFFmpegCommand(directory, cueFileDefinition);
+
+        // Iniciar ejecución
         ExecutorService executor = Executors.newSingleThreadExecutor();
+        Process process = builder.start();
+        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+        Future<?> future = executor.submit(streamGobbler);
+
+        try {
+            int exitCode = process.waitFor();
+
+            //System.out.println(future.get());
+        } catch (Exception e) {}
+
+        executor.shutdown();
+        reader.close();
+    }
+
+    private static ProcessBuilder defineFFmpegCommand(File directory, CueFile cueFileDefinition) {
+        boolean isWindows = System.getProperty("os.name")
+                .toLowerCase()
+                .startsWith("windows");
 
         ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(directory);
         if (isWindows) {
             builder.command(
-
                     "powershell.exe",
                     "ffmpeg.exe",
-                    "-y",
                     "-v",
+                    "quiet",
+                    "-y",
                     "-i",
                     "'.\\" + cueFileDefinition.getFileName() + "'",
                     "-ss",
@@ -139,25 +169,28 @@ public class App {
                     "00:03:09",
                     "-c",
                     "copy",
-                    cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle()
-
+                    "'" + cueFileDefinition.getTrackList().get(0).getTrackNumber() + ". " + cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle() + "." + cueFileDefinition.getFileFormat() + "'"
             );
-            builder.directory(new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\"));
+        } else {
+            builder.command(
+                    "/bin/sh",
+                    "-c",
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    "'./" + cueFileDefinition.getFileName() + "'",
+                    "-ss",
+                    "00:00:00",
+                    "-to",
+                    "00:03:09",
+                    "-c",
+                    "copy",
+                    "'" + cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle() + "." + cueFileDefinition.getFileFormat() + "'"
+            );
         }
-
-        Process process = builder.start();
-        StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
-        Future<?> future = executor.submit(streamGobbler);
-
-        try {
-            int exitCode = process.waitFor();
-            System.out.println(future.get());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        executor.shutdown();
-        reader.close();
+        printBuilderCommand(builder);
+        System.out.println(cueFileDefinition.getTrackList().get(0).getPerformer());
+        return builder;
     }
 
 
