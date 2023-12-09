@@ -129,18 +129,42 @@ public class App {
         // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
 
 
-        ProcessBuilder builder = defineFFmpegCommand(
+        for (int i = 0; i< cueFileDefinition.getTrackList().size() -1; i++){
+            ProcessBuilder builder = defineFFmpegCommand(
+                    directory
+                    ,cueFileDefinition.getFileName()
+                    ,cueFileDefinition.getFileFormat()
+                    ,cueFileDefinition.getTrackList().get(i).getTimeOffset()
+                    ,cueFileDefinition.getTrackList().get(i + 1).getTimeOffset() // Los archivos CUE solo indican el comienzo de cada canción. El fin de la canción 'i' es el principio de la canción 'i+1'
+                    ,cueFileDefinition.getTrackList().get(i).getTrackNumber()
+                    ,cueFileDefinition.getTrackList().get(i).getPerformer()
+                    ,cueFileDefinition.getTrackList().get(i).getTitle()
+            );
+
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Process process = builder.start();
+            StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+            Future<?> future = executor.submit(streamGobbler);
+
+            try {
+                int exitCode = process.waitFor();
+
+                System.out.println(future.get());
+            } catch (Exception e) {}
+        }
+
+        Integer lastTrackNumber = cueFileDefinition.getTrackList().size() -1;
+        ProcessBuilder builder = defineLastFFmpegCommand(
                 directory
                 ,cueFileDefinition.getFileName()
                 ,cueFileDefinition.getFileFormat()
-                ,cueFileDefinition.getTrackList().get(0).getTimeOffset()
-                ,cueFileDefinition.getTrackList().get(1).getTimeOffset()
-                ,cueFileDefinition.getTrackList().get(0).getTrackNumber()
-                ,cueFileDefinition.getTrackList().get(0).getPerformer()
-                ,cueFileDefinition.getTrackList().get(0).getTitle()
+                ,cueFileDefinition.getTrackList().get(lastTrackNumber).getTimeOffset()
+                , cueFileDefinition.getTrackList().get(lastTrackNumber).getTrackNumber()
+                ,cueFileDefinition.getTrackList().get(lastTrackNumber).getPerformer()
+                ,cueFileDefinition.getTrackList().get(lastTrackNumber).getTitle()
         );
+        printBuilderCommand(builder);
 
-        // Iniciar ejecución
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Process process = builder.start();
         StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
@@ -149,7 +173,7 @@ public class App {
         try {
             int exitCode = process.waitFor();
 
-            //System.out.println(future.get());
+            System.out.println(future.get());
         } catch (Exception e) {}
 
         executor.shutdown();
@@ -194,6 +218,46 @@ public class App {
                     startingTime.toString(),
                     "-to",
                     endingTime.toString(),
+                    "-c",
+                    "copy",
+                    "'" + trackNumber + ". " + trackPerformer + " - " + trackTitle + "." + fileFormat + "'" // Nombre del archivo a crear
+            );
+        }
+        return builder;
+    }
+
+    private static ProcessBuilder defineLastFFmpegCommand(File directory, String filename, String fileFormat, LocalTime startingTime, Integer trackNumber, String trackPerformer, String trackTitle) {
+        boolean isWindows = System.getProperty("os.name")
+                .toLowerCase()
+                .startsWith("windows");
+
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(directory);
+        if (isWindows) {
+            builder.command(
+                    "powershell.exe",
+                    "ffmpeg.exe",
+                    "-y",
+                    "-i",
+                    "'.\\" + filename + "'",
+                    "-ss",
+                    startingTime.toString(),
+                    "-c",
+                    "copy",
+                    "'" + trackNumber + ". " + trackPerformer + " - " + trackTitle + "." + fileFormat + "'"
+            );
+        } else {
+            builder.command(
+                    "/bin/sh",
+                    "-c",
+                    "ffmpeg",
+                    "-v",
+                    "quiet",
+                    "-y",
+                    "-i",
+                    "'.\\" + filename + "'",
+                    "-ss",
+                    startingTime.toString(),
                     "-c",
                     "copy",
                     "'" + trackNumber + ". " + trackPerformer + " - " + trackTitle + "." + fileFormat + "'" // Nombre del archivo a crear
