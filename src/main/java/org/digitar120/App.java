@@ -129,7 +129,16 @@ public class App {
         // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
 
 
-        ProcessBuilder builder = defineFFmpegCommand(directory, cueFileDefinition);
+        ProcessBuilder builder = defineFFmpegCommand(
+                directory
+                ,cueFileDefinition.getFileName()
+                ,cueFileDefinition.getFileFormat()
+                ,cueFileDefinition.getTrackList().get(0).getTimeOffset()
+                ,cueFileDefinition.getTrackList().get(1).getTimeOffset()
+                ,cueFileDefinition.getTrackList().get(0).getTrackNumber()
+                ,cueFileDefinition.getTrackList().get(0).getPerformer()
+                ,cueFileDefinition.getTrackList().get(0).getTitle()
+        );
 
         // Iniciar ejecución
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -147,7 +156,7 @@ public class App {
         reader.close();
     }
 
-    private static ProcessBuilder defineFFmpegCommand(File directory, CueFile cueFileDefinition) {
+    private static ProcessBuilder defineFFmpegCommand(File directory, String filename, String fileFormat, LocalTime startingTime, LocalTime endingTime, Integer trackNumber, String trackPerformer, String trackTitle) {
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase()
                 .startsWith("windows");
@@ -162,30 +171,32 @@ public class App {
                     "quiet",
                     "-y",
                     "-i",
-                    "'.\\" + cueFileDefinition.getFileName() + "'",
+                    "'.\\" + filename + "'",
                     "-ss",
-                    "00:00:00",
+                    startingTime.toString(),
                     "-to",
-                    "00:03:09",
+                    endingTime.toString(),
                     "-c",
                     "copy",
-                    "'" + cueFileDefinition.getTrackList().get(0).getTrackNumber() + ". " + cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle() + "." + cueFileDefinition.getFileFormat() + "'"
+                    "'" + trackNumber + ". " + trackPerformer + " - " + trackTitle + "." + fileFormat + "'"
             );
         } else {
             builder.command(
                     "/bin/sh",
                     "-c",
                     "ffmpeg",
+                    "-v",
+                    "quiet",
                     "-y",
                     "-i",
-                    "'./" + cueFileDefinition.getFileName() + "'",
+                    "'.\\" + filename + "'",
                     "-ss",
-                    "00:00:00",
+                    startingTime.toString(),
                     "-to",
-                    "00:03:09",
+                    endingTime.toString(),
                     "-c",
                     "copy",
-                    "'" + cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle() + "." + cueFileDefinition.getFileFormat() + "'"
+                    "'" + trackNumber + ". " + trackPerformer + " - " + trackTitle + "." + fileFormat + "'" // Nombre del archivo a crear
             );
         }
         return builder;
