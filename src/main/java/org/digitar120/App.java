@@ -172,12 +172,17 @@ public class App {
 
         try {
             int exitCode = process.waitFor();
+            System.out.println(exitCode);
 
-            System.out.println(future.get());
+            if (future.get()!=null){
+                System.out.println(future.get());
+            }
         } catch (Exception e) {}
 
         executor.shutdown();
         reader.close();
+
+        Runtime.getRuntime().exit(0); // El programa no termina sin ésta línea.
     }
 
     private static ProcessBuilder defineFFmpegCommand(File directory, String filename, String fileFormat, LocalTime startingTime, LocalTime endingTime, Integer trackNumber, String trackPerformer, String trackTitle) {
@@ -238,6 +243,8 @@ public class App {
                     "powershell.exe",
                     "ffmpeg.exe",
                     "-y",
+                    "-v",
+                    "quiet",
                     "-i",
                     "'.\\" + filename + "'",
                     "-ss",
