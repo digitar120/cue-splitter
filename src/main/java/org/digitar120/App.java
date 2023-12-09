@@ -188,8 +188,6 @@ public class App {
                     "'" + cueFileDefinition.getTrackList().get(0).getPerformer() + " - " + cueFileDefinition.getTrackList().get(0).getTitle() + "." + cueFileDefinition.getFileFormat() + "'"
             );
         }
-        printBuilderCommand(builder);
-        System.out.println(cueFileDefinition.getTrackList().get(0).getPerformer());
         return builder;
     }
 
