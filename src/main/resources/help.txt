@@ -1,0 +1,7 @@
+Simple CUE file splitter
+
+cue-splitter separates a single music file into several, according to a CUE file.
+
+usage: cue-splitter [.cue file]
+
+-h  --help  --  print this message
