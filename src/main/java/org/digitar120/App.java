@@ -14,8 +14,6 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.Track;
 
-import static org.digitar120.util.UtilityMethods.*;
-
 
 public class App {
     private static class StreamGobbler implements Runnable {
@@ -37,25 +35,17 @@ public class App {
 
     public static void main(String[] args) throws IOException {
 
-
-        File directory = new File("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\");
-
+        String filePath = "yeet";
+        File directory = new File("yeet");
 
         // ADQUISICIÓN DE LOS DATOS DEL ARCHIVO
-        BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\Gabriel\\Desktop\\AK420\\A Matter Of Wax\\cue.cue"));
+        BufferedReader reader = new BufferedReader(new FileReader(filePath));
         CueFile cueFileDefinition = new CueFile();
 
         // Artista, álbum
         cueFileDefinition.setPerformer(readProperty(reader, cueFileDefinition, "PERFORMER ".length()));
         cueFileDefinition.setTitle(readProperty(reader, cueFileDefinition, "TITLE ".length()));
-        /* cueFileDefinition.setFileName(
-                StringUtils.strip(
-                        reader.readLine()
-                                .substring("FILE ".length())
-                                .replace(" MP3", "")
-                        , "\""
-                )
-        );*/
+
         String thirdLine = reader.readLine();
         String fileName = thirdLine.substring(
                 thirdLine.indexOf("\"") + 1,
@@ -163,7 +153,6 @@ public class App {
                 ,cueFileDefinition.getTrackList().get(lastTrackNumber).getPerformer()
                 ,cueFileDefinition.getTrackList().get(lastTrackNumber).getTitle()
         );
-        printBuilderCommand(builder);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Process process = builder.start();
@@ -184,6 +173,7 @@ public class App {
 
         Runtime.getRuntime().exit(0); // El programa no termina sin ésta línea.
     }
+
 
     private static ProcessBuilder defineFFmpegCommand(File directory, String filename, String fileFormat, LocalTime startingTime, LocalTime endingTime, Integer trackNumber, String trackPerformer, String trackTitle) {
         boolean isWindows = System.getProperty("os.name")
