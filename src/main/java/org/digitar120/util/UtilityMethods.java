@@ -26,4 +26,8 @@ public final class UtilityMethods {
             return false;
         }
     }
+
+    public static String returnFirstWord(String string){
+        return string.split(" ")[0];
+    }
 }
