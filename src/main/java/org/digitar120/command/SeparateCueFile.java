@@ -119,7 +119,7 @@ public class SeparateCueFile implements Runnable{
         builder.directory(new File(workingDirectory));
 
         // Modelo de comando
-          ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
+        // ffmpeg -i "AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus" -ss 00:00:00 -to 00:03:09 -c copy "1. AK420 - Soul Made.opus"
         // ffmpeg -i <archivo> -ss <inicio> -to <fin> -c copy <archivo a crear>
         builder.command(
                 isWindows ? "powershell.exe" : "sh"
