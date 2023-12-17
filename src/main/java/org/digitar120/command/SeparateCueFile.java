@@ -12,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -60,15 +61,19 @@ public class SeparateCueFile implements Runnable{
         Runtime.getRuntime().exit(0);
 
          */
-        // TODO: resolver desfase de tiempos
-            // TODO tracks OK, el problema está en la construcción
+        // TODO: resolver cómo se identifica la última pista, en relación al tiempo (getNextOffsetIfExists)
         // TODO: ver cómo devolver un código de ejecución diferente a 0 si hay fallas
 
     }
 
     private static void dryRun(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for(Track track: cueFile.getTrackList()){
-            ProcessBuilder builder = defineFFmpegCommand(workingDirectory, cueFileAbsolutePath, cueFile, track);
+            ProcessBuilder builder = defineFFmpegCommand(
+                    workingDirectory,
+                    cueFileAbsolutePath,
+                    cueFile,
+                    track,
+                    getNextOffsetIfExists(cueFile, track));
             printBuilderCommand(builder);
         }
     }
@@ -84,7 +89,12 @@ public class SeparateCueFile implements Runnable{
 
     private static void executeFFmpeg(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for (Track track: cueFile.getTrackList()){
-            ProcessBuilder builder = defineFFmpegCommand(workingDirectory, cueFileAbsolutePath, cueFile, track);
+            ProcessBuilder builder = defineFFmpegCommand(
+                    workingDirectory,
+                    cueFileAbsolutePath,
+                    cueFile,
+                    track,
+                    getNextOffsetIfExists(cueFile, track));
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             try {
@@ -108,7 +118,26 @@ public class SeparateCueFile implements Runnable{
         }
     }
 
-    private static ProcessBuilder defineFFmpegCommand(String workingDirectory, String cueFilePath, CueFile cueFile, Track track){
+    private static Optional<LocalTime> getNextOffsetIfExists(CueFile cueFile, Integer trackIndex){
+        return Optional.of(
+                cueFile.getTrackList().get(
+                        trackIndex +1
+                ).getTimeOffset());
+    }
+
+    private static Optional<LocalTime> getNextOffsetIfExists(CueFile cueFile, Track track){
+        // Obtener el tiempo de inicio de la canción siguiente, si +esta existe
+        try{
+            return Optional.of(
+                    cueFile.getTrackList().get(
+                            cueFile.getTrackList().indexOf(track) +1
+                    ).getTimeOffset());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static ProcessBuilder defineFFmpegCommand(String workingDirectory, String cueFilePath, CueFile cueFile, Track track, Optional<LocalTime> nextTrackOffset){
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase()
                 .startsWith("windows");
@@ -131,7 +160,7 @@ public class SeparateCueFile implements Runnable{
                 , "'" + cueFilePath + "'"
                 , "-ss"
                 , track.getTimeOffset().toString()
-                , isLastTrack ? "" : "-to"
+                , nextTrackOffset.isPresent() ? "-to" : ""
 
                 /*
                 Si la pista ingresada no es la última (por ej, 11/12), el fin de ésta es el comienzo de la siguiente.
@@ -149,10 +178,7 @@ public class SeparateCueFile implements Runnable{
                 Como "Roter Sand" es la última pista, la opción "-to" y su argumento no son necesarios.
 
                  */
-                , isLastTrack ? "" : cueFile.getTrackList()
-                        .get(track.getTrackNumber() +1)
-                        .getTimeOffset().toString()
-
+                , nextTrackOffset.isPresent() ? nextTrackOffset.get().toString() : ""
                 , "-c"
                 , "copy"
                 , "'" +
