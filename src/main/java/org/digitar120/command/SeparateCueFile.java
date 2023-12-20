@@ -150,7 +150,7 @@ public class SeparateCueFile implements Runnable{
 
                  */
                 , isLastTrack ? "" : cueFile.getTrackList()
-                        .get(track.getTrackNumber() +1)
+                        .get(track.getTrackNumber()) // No es +1 porque trackNumber comienza en 1
                         .getTimeOffset().toString()
 
                 , "-c"
