@@ -51,6 +51,11 @@ public class SeparateCueFile implements Runnable{
 
         dryRun(cueFileAbsolutePath, workingDirectory, cueFile);
 
+        // TODO: Si el stream 0 es opus, y además existe un stream 1 que sea una imágen,
+        // TODO ejecutar un comando adicional para extraer la imágen en un archivo.
+
+        // No considero python-mutagen
+
         /*
 
         executeFFmpeg(cueFileAbsolutePath, workingDirectory, cueFile);
@@ -60,8 +65,7 @@ public class SeparateCueFile implements Runnable{
         Runtime.getRuntime().exit(0);
 
          */
-        // TODO: resolver desfase de tiempos
-            // TODO tracks OK, el problema está en la construcción
+
         // TODO: ver cómo devolver un código de ejecución diferente a 0 si hay fallas
 
     }
