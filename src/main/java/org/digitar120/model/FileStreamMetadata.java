@@ -20,5 +20,5 @@ public class FileStreamMetadata {
     private String pURL;
     private List<String> synopsis = new ArrayList<>();
     private String comment;
-    private List<Chapter> chapters;
+    private List<FileChapter> chapters;
 }

@@ -24,6 +24,10 @@ import static org.digitar120.util.UtilityMethods.*;
         description = "Separates a music file into its separate tracks, according to the given CUE file"
 )
 public class SeparateCueFile implements Runnable{
+    static boolean isWindows = System.getProperty("os.name")
+            .toLowerCase()
+            .startsWith("windows");
+
     @CommandLine.Parameters(index = "0", description = "CUE file path")
     private String cueFilePath;
 
@@ -46,10 +50,16 @@ public class SeparateCueFile implements Runnable{
                 , getExtension(mainParameters[2]) // La tercera posición de mainParameters es el nombre del archivo de música
         );
 
+        String fileAbsolutePath = workingDirectory +
+                (isWindows ? "\\" : "/")
+                + cueFile.getFileName();
+
+        //System.out.println(fileAbsolutePath);
+
         populateTrackList(reader, cueFile);
 
-
-        dryRun(cueFileAbsolutePath, workingDirectory, cueFile);
+        // Cómo obtengo la dirección absoluta del archivo referenciado en el archivo CUE?
+        executeFFprobe(fileAbsolutePath);
 
         // TODO: Si el stream 0 es opus, y además existe un stream 1 que sea una imágen,
         // TODO ejecutar un comando adicional para extraer la imágen en un archivo.
@@ -84,6 +94,30 @@ public class SeparateCueFile implements Runnable{
             throw new RuntimeException(e);
         }
     }
+
+    private static void executeFFprobe(String absoluteFilePath){
+        ProcessBuilder builder = defineFFprobeCommand(new File(absoluteFilePath).getParent(), absoluteFilePath);
+
+        printBuilderCommand(builder);
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        try {
+            Process process = builder.start();
+            StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
+            Future<?> future = executorService.submit(streamGobbler);
+
+            int exitCode = process.waitFor();
+
+            if (future.get()!=null){
+                System.out.println(future.get());
+            }
+
+            executorService.shutdown();
+
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
     
 
     private static void executeFFmpeg(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
@@ -93,7 +127,8 @@ public class SeparateCueFile implements Runnable{
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             try {
                 Process process = builder.start();
-                StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+                StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
+                // FFmpeg no escribe a stdout, escribe a stderr
                 Future<?> future = executorService.submit(streamGobbler);
 
                 int exitCode = process.waitFor();
@@ -112,10 +147,25 @@ public class SeparateCueFile implements Runnable{
         }
     }
 
+    private static ProcessBuilder defineFFprobeCommand(String workingDirectory, String filePath){
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(new File(workingDirectory));
+
+        builder.command(
+                isWindows ? "powershell.exe" : "sh",
+                isWindows ? "-Command" : "-c",
+                isWindows ? "" : "\"", // TODO sh requiere encerrar en comillas dobles para pasar una cadena como argumento
+                isWindows ? "ffprobe.exe" : "ffprobe",
+                "-v",
+                "verbose",
+                "'" + filePath + "'",
+                isWindows ? "" : "\""
+        );
+        return builder;
+    }
+
     private static ProcessBuilder defineFFmpegCommand(String workingDirectory, String cueFilePath, CueFile cueFile, Track track){
-        boolean isWindows = System.getProperty("os.name")
-                .toLowerCase()
-                .startsWith("windows");
+
 
         boolean isLastTrack = track.getTrackNumber().equals(cueFile.getTrackList().size());
 
@@ -273,6 +323,22 @@ public class SeparateCueFile implements Runnable{
     private static String getFirstWord(String string){
         // Devuelve la primera secuencia de caracteres de una String, delimitada con un espacio al final.
         return string.trim().split(" ")[0];
+    }
+
+    private static String getNthWord(String string){
+        try{
+            return string.trim().split(" ")[0];
+        } catch (IndexOutOfBoundsException e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String getNthWord(String string, Integer index){
+        try {
+            return string.trim().split(" ")[index];
+        } catch (IndexOutOfBoundsException e){
+            throw new RuntimeException(e);
+        }
     }
 
     private static String getStringWithinDelimiters(String string, String delimiter){
