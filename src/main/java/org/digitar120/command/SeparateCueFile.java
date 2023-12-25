@@ -12,7 +12,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +24,10 @@ import static org.digitar120.util.UtilityMethods.*;
         description = "Separates a music file into its separate tracks, according to the given CUE file"
 )
 public class SeparateCueFile implements Runnable{
+    static boolean isWindows = System.getProperty("os.name")
+            .toLowerCase()
+            .startsWith("windows");
+
     @CommandLine.Parameters(index = "0", description = "CUE file path")
     private String cueFilePath;
 
@@ -47,10 +50,21 @@ public class SeparateCueFile implements Runnable{
                 , getExtension(mainParameters[2]) // La tercera posición de mainParameters es el nombre del archivo de música
         );
 
+        String fileAbsolutePath = workingDirectory +
+                (isWindows ? "\\" : "/")
+                + cueFile.getFileName();
+
+        //System.out.println(fileAbsolutePath);
+
         populateTrackList(reader, cueFile);
 
+        // Cómo obtengo la dirección absoluta del archivo referenciado en el archivo CUE?
+       executeFFprobe(fileAbsolutePath).forEach(System.out::println);
 
-        dryRun(cueFileAbsolutePath, workingDirectory, cueFile);
+        // TODO: Si el stream 0 es opus, y además existe un stream 1 que sea una imágen,
+        // TODO ejecutar un comando adicional para extraer la imágen en un archivo.
+
+        // No considero python-mutagen
 
         /*
 
@@ -61,45 +75,58 @@ public class SeparateCueFile implements Runnable{
         Runtime.getRuntime().exit(0);
 
          */
-        // TODO: resolver cómo se identifica la última pista, en relación al tiempo (getNextOffsetIfExists)
+
+        // TODO - en proceso: Elaborar un parser para la devolución de FFprobe
+
         // TODO: ver cómo devolver un código de ejecución diferente a 0 si hay fallas
 
     }
 
     private static void dryRun(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for(Track track: cueFile.getTrackList()){
-            ProcessBuilder builder = defineFFmpegCommand(
-                    workingDirectory,
-                    cueFileAbsolutePath,
-                    cueFile,
-                    track,
-                    getNextOffsetIfExists(cueFile, track));
+            ProcessBuilder builder = defineFFmpegCommand(workingDirectory, cueFileAbsolutePath, cueFile, track);
+
             printBuilderCommand(builder);
         }
     }
 
-    private static void closeReader(BufferedReader reader) {
+    private static void parseFFprobeResults(List<String> ffprobeOutput){
+        for (int i = 0; i < ffprobeOutput.size(); i++){
+            // TODO
+        }
+    }
+
+    private static List<String> executeFFprobe(String absoluteFilePath){
+        ProcessBuilder builder = defineFFprobeCommand(new File(absoluteFilePath).getParent(), absoluteFilePath);
+
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            reader.close();
-        } catch (IOException e) {
+            Process process = builder.start();
+
+            List<String> accumulatedOutput = new ArrayList<>();
+            StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), accumulatedOutput::add);
+            Future<?> future = executorService.submit(streamGobbler);
+
+            int exitCode = process.waitFor();
+
+            executorService.shutdown();
+
+            return accumulatedOutput;
+
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-    
 
     private static void executeFFmpeg(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for (Track track: cueFile.getTrackList()){
-            ProcessBuilder builder = defineFFmpegCommand(
-                    workingDirectory,
-                    cueFileAbsolutePath,
-                    cueFile,
-                    track,
-                    getNextOffsetIfExists(cueFile, track));
+            ProcessBuilder builder = defineFFmpegCommand(workingDirectory, cueFileAbsolutePath, cueFile, track);
 
             ExecutorService executorService = Executors.newSingleThreadExecutor();
             try {
                 Process process = builder.start();
-                StreamGobbler streamGobbler = new StreamGobbler(process.getInputStream(), System.out::println);
+                StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), System.out::println);
+                // FFmpeg no escribe a stdout, escribe a stderr
                 Future<?> future = executorService.submit(streamGobbler);
 
                 int exitCode = process.waitFor();
@@ -118,29 +145,25 @@ public class SeparateCueFile implements Runnable{
         }
     }
 
-    private static Optional<LocalTime> getNextOffsetIfExists(CueFile cueFile, Integer trackIndex){
-        return Optional.of(
-                cueFile.getTrackList().get(
-                        trackIndex +1
-                ).getTimeOffset());
+    private static ProcessBuilder defineFFprobeCommand(String workingDirectory, String filePath){
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(new File(workingDirectory));
+
+        builder.command(
+                isWindows ? "powershell.exe" : "sh",
+                isWindows ? "-Command" : "-c",
+                isWindows ? "" : "\"", // TODO sh requiere encerrar en comillas dobles para pasar una cadena como argumento
+                isWindows ? "ffprobe.exe" : "ffprobe",
+                "-v",
+                "verbose",
+                "'" + filePath + "'",
+                isWindows ? "" : "\""
+        );
+        return builder;
     }
 
-    private static Optional<LocalTime> getNextOffsetIfExists(CueFile cueFile, Track track){
-        // Obtener el tiempo de inicio de la canción siguiente, si +esta existe
-        try{
-            return Optional.of(
-                    cueFile.getTrackList().get(
-                            cueFile.getTrackList().indexOf(track) +1
-                    ).getTimeOffset());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static ProcessBuilder defineFFmpegCommand(String workingDirectory, String cueFilePath, CueFile cueFile, Track track){
 
-    private static ProcessBuilder defineFFmpegCommand(String workingDirectory, String cueFilePath, CueFile cueFile, Track track, Optional<LocalTime> nextTrackOffset){
-        boolean isWindows = System.getProperty("os.name")
-                .toLowerCase()
-                .startsWith("windows");
 
         boolean isLastTrack = track.getTrackNumber().equals(cueFile.getTrackList().size());
 
@@ -160,7 +183,7 @@ public class SeparateCueFile implements Runnable{
                 , "'" + cueFilePath + "'"
                 , "-ss"
                 , track.getTimeOffset().toString()
-                , nextTrackOffset.isPresent() ? "-to" : ""
+                , isLastTrack ? "" : "-to"
 
                 /*
                 Si la pista ingresada no es la última (por ej, 11/12), el fin de ésta es el comienzo de la siguiente.
@@ -178,7 +201,10 @@ public class SeparateCueFile implements Runnable{
                 Como "Roter Sand" es la última pista, la opción "-to" y su argumento no son necesarios.
 
                  */
-                , nextTrackOffset.isPresent() ? nextTrackOffset.get().toString() : ""
+                , isLastTrack ? "" : cueFile.getTrackList()
+                        .get(track.getTrackNumber()) // No es +1 porque trackNumber comienza en 1
+                        .getTimeOffset().toString()
+
                 , "-c"
                 , "copy"
                 , "'" +
@@ -265,57 +291,5 @@ public class SeparateCueFile implements Runnable{
         return mainParameters;
     }
 
-    private static String getAbsoluteFilePathIfExists(String cueFilePath) {
-        File cueFile = new File(cueFilePath);
 
-        if (cueFile.isFile() && cueFile.toString().endsWith(".cue")){
-            return cueFile.getAbsolutePath();
-        } else {
-            System.err.println("Error: not a CUE file");
-            throw new RuntimeException();
-        }
-    }
-
-    private static BufferedReader createReader(String absolutePath) {
-        try {
-            return new BufferedReader(new FileReader(absolutePath));
-        } catch (IOException e){
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String readNextLine(BufferedReader reader){
-        try {
-            return reader.readLine();
-        } catch (IOException e){
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static String getFirstWord(String string){
-        // Devuelve la primera secuencia de caracteres de una String, delimitada con un espacio al final.
-        return string.trim().split(" ")[0];
-    }
-
-    private static String getStringWithinDelimiters(String string, String delimiter){
-        // Ejemplo:
-        //PERFORMER "Rammstein"
-        // Devuelve:
-        //Rammstein
-
-        // Asume que solo hay dos delimitadores.
-
-        return string.trim().substring(
-                StringUtils.indexOf(string, delimiter) +1
-                , StringUtils.lastIndexOf(string, delimiter)
-        );
-    }
-
-    private static String getExtension(String path){
-        // Devuelve los caracteres de una String que le siguen al último punto
-
-        return path.substring(
-                StringUtils.lastIndexOf(path, ".") +1
-        );
-    }
 }

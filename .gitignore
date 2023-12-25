@@ -1,4 +1,5 @@
 .idea/
+.attach*	# Archivo que aparece en Linux
 
 target/
 !.mvn/wrapper/maven-wrapper.jar
