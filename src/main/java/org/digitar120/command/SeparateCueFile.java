@@ -147,12 +147,13 @@ public class SeparateCueFile implements Runnable{
         builder.command(
                 isWindows ? "powershell.exe" : "sh",
                 isWindows ? "-Command" : "-c",
-                isWindows ? "" : "\"", // TODO sh requiere encerrar en comillas dobles para pasar una cadena como argumento
-                isWindows ? "ffprobe.exe" : "ffprobe",
+                // TODO sh requiere encerrar el argumento de "-c" entre comillas dobles
+                isWindows ? "" : "\"" +
+                        (isWindows ? "ffprobe.exe" : "ffprobe"),
                 "-v",
                 "verbose",
-                "'" + filePath + "'",
-                isWindows ? "" : "\""
+                "'" + filePath + "'" +
+                        (isWindows ? "" : "\"")
         );
         return builder;
     }
