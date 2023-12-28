@@ -1,0 +1,107 @@
+ffprobe version 5.0-full_build-www.gyan.dev Copyright (c) 2007-2022 the FFmpeg developers
+  built with gcc 11.2.0 (Rev5, Built by MSYS2 project)
+  configuration: --enable-gpl --enable-version3 --enable-static --disable-w32threads --disable-autodetect --enable-fontconfig --enable-iconv --enable-gnutls --enable-libxml2 --enable-gmp --enable-bzlib --enable-lzma --enable-libsnappy --enable-zlib --enable-librist --enable-libsrt --enable-libssh --enable-libzmq --enable-avisynth --enable-libbluray --enable-libcaca --enable-sdl2 --enable-libdav1d --enable-libdavs2 --enable-libuavs3d --enable-libzvbi --enable-librav1e --enable-libsvtav1 --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs2 --enable-libxvid --enable-libaom --enable-libopenjpeg --enable-libvpx --enable-mediafoundation --enable-libass --enable-frei0r --enable-libfreetype --enable-libfribidi --enable-libvidstab --enable-libvmaf --enable-libzimg --enable-amf --enable-cuda-llvm --enable-cuvid --enable-ffnvcodec --enable-nvdec --enable-nvenc --enable-d3d11va --enable-dxva2 --enable-libmfx --enable-libshaderc --enable-vulkan --enable-libplacebo --enable-opencl --enable-libcdio --enable-libgme --enable-libmodplug --enable-libopenmpt --enable-libopencore-amrwb --enable-libmp3lame --enable-libshine --enable-libtheora --enable-libtwolame --enable-libvo-amrwbenc --enable-libilbc --enable-libgsm --enable-libopencore-amrnb --enable-libopus --enable-libspeex --enable-libvorbis --enable-ladspa --enable-libbs2b --enable-libflite --enable-libmysofa --enable-librubberband --enable-libsoxr --enable-chromaprint
+  libavutil      57. 17.100 / 57. 17.100
+  libavcodec     59. 18.100 / 59. 18.100
+  libavformat    59. 16.100 / 59. 16.100
+  libavdevice    59.  4.100 / 59.  4.100
+  libavfilter     8. 24.100 /  8. 24.100
+  libswscale      6.  4.100 /  6.  4.100
+  libswresample   4.  3.100 /  4.  3.100
+  libpostproc    56.  3.100 / 56.  3.100
+[ogg @ 000001d5d2b192c0] 37114 bytes of comment header remain
+Input #0, ogg, from 'C:\Users\Gabriel\Desktop\AK420\A Matter Of Wax\AK420 - A Matter Of Wax [Full BeatTape] [R1U2tN6Xlqk].opus':
+  Duration: 00:37:27.60, start: 0.000000, bitrate: 131 kb/s
+  Chapters:
+    Chapter #0:0: start 0.000000, end 189.000000
+      Metadata:
+        title           : Soul Made
+    Chapter #0:1: start 189.000000, end 372.000000
+      Metadata:
+        title           : Holiday
+    Chapter #0:2: start 372.000000, end 569.000000
+      Metadata:
+        title           : Morning Light
+    Chapter #0:3: start 569.000000, end 767.000000
+      Metadata:
+        title           : Liberty City
+    Chapter #0:4: start 767.000000, end 894.000000
+      Metadata:
+        title           : Northern Lights
+    Chapter #0:5: start 894.000000, end 1032.000000
+      Metadata:
+        title           : Multidimensional
+    Chapter #0:6: start 1032.000000, end 1213.000000
+      Metadata:
+        title           : E0864
+    Chapter #0:7: start 1213.000000, end 1331.000000
+      Metadata:
+        title           : Under Pressure
+    Chapter #0:8: start 1331.000000, end 1448.000000
+      Metadata:
+        title           : Corner of Boom
+    Chapter #0:9: start 1448.000000, end 1597.000000
+      Metadata:
+        title           : Mantra
+    Chapter #0:10: start 1597.000000, end 1776.000000
+      Metadata:
+        title           : 420 PM
+    Chapter #0:11: start 1776.000000, end 1891.000000
+      Metadata:
+        title           : Step Back
+    Chapter #0:12: start 1891.000000, end 2102.000000
+      Metadata:
+        title           : Solitude
+    Chapter #0:13: start 2102.000000, end 2247.600000
+      Metadata:
+        title           : Freedom
+  Stream #0:0(eng): Audio: opus, 48000 Hz, stereo, fltp, delay 312
+    Metadata:
+      encoder         : Lavf59.16.100
+      title           : AK420 - A Matter Of Wax [Full BeatTape]
+      date            : 20190810
+      purl            : https://www.youtube.com/watch?v=R1U2tN6Xlqk
+      synopsis        : Tracklist:
+                      : 0:00 Soul Made
+                      : 3:09 - Holiday
+                      : 6:12 - Morning Light
+                      : 9:29 - Liberty City
+                      : 12:47 - Northern Lights
+                      : 14:54 - Multidimensional
+                      : 17:12 - E0864
+                      : 20:13 - Under Pressure
+                      : 22:11 - Corner of Boom
+                      : 24:08 - Mantra
+                      : 26:37 - 420 PM
+                      : 29:36 - Step Back
+                      : 31:31 - Solitude
+                      : 35:02 - Freedom
+                      :
+                      : A Matter Of Wax:
+                      : https://fanlink.to/b2Y6
+                      :
+                      : Vinyl:
+                      : http://bit.ly/AMOW_AK420
+                      :
+                      : Follow AK420:
+                      : https://soundcloud.com/akfourtwozero
+                      : https://ak420.bandcamp.com
+                      : https://facebook.com/AKFourTwenty
+                      :
+                      : Follow Millennium Jazz Music:
+                      : https://www.instagram.com/millenniumjazzmusic
+                      : https://soundcloud.com/millenniumjazz
+                      :
+                      : Follow Steezyasfuck:
+                      : http://twitter.com/stzzyasfvck
+                      : https://facebook.com/stzzyasfvck
+                      : https://instagram.com/stzzyasfvck
+                      :
+                      : SUBMISSIONS:
+                      : https://stzzzy.com/submissions
+      comment         : https://www.youtube.com/watch?v=R1U2tN6Xlqk
+      artist          : STEEZYASFUCK
+  Stream #0:1: Video: png, 1 reference frame, rgb24(pc), 1280x720, 90k tbr, 90k tbn (attached pic)
+    Metadata:
+      comment         : Cover (front)
+[AVIOContext @ 000001d5d41a9380] Statistics: 1081115 bytes read, 3 seeks

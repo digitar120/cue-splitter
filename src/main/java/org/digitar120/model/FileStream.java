@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class FileStreamMetadata {
+public class FileStream {
     private String type;
     private String duration;
     private String encoder;

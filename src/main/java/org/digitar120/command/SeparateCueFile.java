@@ -2,6 +2,7 @@ package org.digitar120.command;
 
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.CueFile;
+import org.digitar120.model.FileChapter;
 import org.digitar120.model.Track;
 import org.digitar120.streamGobbler.StreamGobbler;
 import picocli.CommandLine;
@@ -82,17 +83,14 @@ public class SeparateCueFile implements Runnable{
 
     }
 
+
+
+
     private static void dryRun(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for(Track track: cueFile.getTrackList()){
             ProcessBuilder builder = defineFFmpegCommand(workingDirectory, cueFileAbsolutePath, cueFile, track);
 
             printBuilderCommand(builder);
-        }
-    }
-
-    private static void parseFFprobeResults(List<String> ffprobeOutput){
-        for (int i = 0; i < ffprobeOutput.size(); i++){
-            // TODO
         }
     }
 
