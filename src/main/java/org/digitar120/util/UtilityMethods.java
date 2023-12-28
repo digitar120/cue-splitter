@@ -49,14 +49,6 @@ public final class UtilityMethods {
         return string.trim().split(" ")[0];
     }
 
-    public static String getNthWord(String string){
-        try{
-            return string.trim().split(" ")[0];
-        } catch (IndexOutOfBoundsException e){
-            throw new RuntimeException(e);
-        }
-    }
-
     public static String getNthWord(String string, Integer index){
         try {
             return string.trim().split(" ")[index];

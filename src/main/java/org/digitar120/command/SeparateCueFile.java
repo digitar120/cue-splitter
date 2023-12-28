@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static org.digitar120.util.UtilityMethods.*;
 
@@ -55,36 +56,32 @@ public class SeparateCueFile implements Runnable{
                 (isWindows ? "\\" : "/")
                 + cueFile.getFileName();
 
-        //System.out.println(fileAbsolutePath);
 
         populateTrackList(reader, cueFile);
 
-        // Cómo obtengo la dirección absoluta del archivo referenciado en el archivo CUE?
-       executeFFprobe(fileAbsolutePath).forEach(System.out::println);
+        getInputLines(fileAbsolutePath);
 
-        // TODO: Si el stream 0 es opus, y además existe un stream 1 que sea una imágen,
-        // TODO ejecutar un comando adicional para extraer la imágen en un archivo.
+        // TODO: seguir separando cada sección
 
-        // No considero python-mutagen
+    }
 
-        /*
+    private static List<String> getInputLines(String fileAbsolutePath) {
+        List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
-        executeFFmpeg(cueFileAbsolutePath, workingDirectory, cueFile);
-
-        closeReader(reader);
-
-        Runtime.getRuntime().exit(0);
-
-         */
-
-        // TODO - en proceso: Elaborar un parser para la devolución de FFprobe
-
-        // TODO: ver cómo devolver un código de ejecución diferente a 0 si hay fallas
-
+        int beginningLine = getInputBeginningLine(ffprobeOutput);
+        return ffprobeOutput.stream().skip(beginningLine).collect(Collectors.toList());
     }
 
 
 
+    private static int getInputBeginningLine(List<String> input){
+        int i = 0;
+        while (!getFirstWord(input.get(i).trim()).equals("Input")){
+            i++;
+        }
+
+        return i;
+    }
 
     private static void dryRun(String cueFileAbsolutePath, String workingDirectory, CueFile cueFile) {
         for(Track track: cueFile.getTrackList()){
