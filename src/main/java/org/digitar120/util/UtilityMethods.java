@@ -105,4 +105,11 @@ public final class UtilityMethods {
                 StringUtils.lastIndexOf(path, ".") +1
         );
     }
+
+    public static String transformPathSpaces(String path){
+        // En sh POSIX, un path con espacios puede expresarse con comillas o con espacios escapados.
+        // "/carpeta 1/archivo 1"
+        // /carpeta\ 1/archivo\ 1
+        return StringUtils.replace(path, " ", "\\ ");
+    }
 }

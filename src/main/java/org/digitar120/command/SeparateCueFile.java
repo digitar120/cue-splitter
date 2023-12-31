@@ -52,16 +52,16 @@ public class SeparateCueFile implements Runnable{
                 , getExtension(mainParameters[2]) // La tercera posición de mainParameters es el nombre del archivo de música
         );
 
-        String fileAbsolutePath = workingDirectory +
+        String fileAbsolutePath =
+                workingDirectory +
                 (isWindows ? "\\" : "/")
                 + cueFile.getFileName();
 
 
-        populateTrackList(reader, cueFile);
-
-        getInputLines(fileAbsolutePath);
+        //getInputLines(fileAbsolutePath);
 
         // TODO: seguir separando cada sección
+        // TODO: Resolver problema de ejecución en Linux
 
     }
 
@@ -97,6 +97,8 @@ public class SeparateCueFile implements Runnable{
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Process process = builder.start();
+
+            printBuilderCommand(builder);
 
             List<String> accumulatedOutput = new ArrayList<>();
             StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), accumulatedOutput::add);
@@ -144,27 +146,15 @@ public class SeparateCueFile implements Runnable{
         ProcessBuilder builder = new ProcessBuilder();
         builder.directory(new File(workingDirectory));
 
-        /*
-        builder.command(
-                isWindows ? "powershell.exe" : "sh",
-                isWindows ? "-Command" : "-c",
-                // TODO sh requiere encerrar el argumento de "-c" entre comillas dobles
-                isWindows ? "" : "\"" +
-                        (isWindows ? "ffprobe.exe" : "ffprobe"),
-                "-v",
-                "verbose",
-                "'" + filePath + "'" +
-                        (isWindows ? "" : "\"")
-        );
 
-         */
         builder.command(
-                "sh",
-                "-c",
-                "\"" + "ffprobe",
+                isWindows ? "powershell.exe" : "bash",
+                isWindows ? "-Command" : "",
+                // TODO sh requiere encerrar el argumento de "-c" entre comillas dobles
+                isWindows ? "ffprobe.exe" : "ffprobe",
                 "-v",
                 "verbose",
-                "'" + filePath + "'" + "\""
+                isWindows ? ("'" + filePath + "'") : (transformPathSpaces(filePath) + "")
         );
         return builder;
     }
