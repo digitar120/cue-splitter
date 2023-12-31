@@ -144,6 +144,7 @@ public class SeparateCueFile implements Runnable{
         ProcessBuilder builder = new ProcessBuilder();
         builder.directory(new File(workingDirectory));
 
+        /*
         builder.command(
                 isWindows ? "powershell.exe" : "sh",
                 isWindows ? "-Command" : "-c",
@@ -154,6 +155,16 @@ public class SeparateCueFile implements Runnable{
                 "verbose",
                 "'" + filePath + "'" +
                         (isWindows ? "" : "\"")
+        );
+
+         */
+        builder.command(
+                "sh",
+                "-c",
+                "\"" + "ffprobe",
+                "-v",
+                "verbose",
+                "'" + filePath + "'" + "\""
         );
         return builder;
     }
