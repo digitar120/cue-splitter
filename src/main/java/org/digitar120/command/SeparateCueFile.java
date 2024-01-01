@@ -1,9 +1,7 @@
 package org.digitar120.command;
 
 import org.apache.commons.lang3.StringUtils;
-import org.digitar120.model.CueFile;
-import org.digitar120.model.FileChapter;
-import org.digitar120.model.Track;
+import org.digitar120.model.*;
 import org.digitar120.streamGobbler.StreamGobbler;
 import picocli.CommandLine;
 
@@ -18,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.digitar120.util.UtilityMethods.*;
 
@@ -58,9 +57,33 @@ public class SeparateCueFile implements Runnable{
                 + cueFile.getFileName();
 
 
-        //getInputLines(fileAbsolutePath);
+        List<String> inputLines = getInputLines(fileAbsolutePath);
 
-        // TODO: seguir separando cada sección
+        // Guardar índices de las líneas en las que comienza una nueva definición de Input
+        List<Integer> inputLineIndexes = new ArrayList<>();
+        inputLineIndexes.add(0);
+        for(int i = 0; i < inputLines.size(); i++){
+            if (getFirstWord(inputLines.get(i)).equals("Input")){
+                inputLineIndexes.add(i);
+            }
+        }
+
+        // TODO Parsear capítulos
+        List<FileStreamInput> streamInputs = new ArrayList<>();
+        inputLineIndexes.forEach(n -> streamInputs.add(new FileStreamInput(
+                n,
+                StringUtils.chop(getNthWord(inputLines.get(n), 3)),
+                StringUtils.chop(getNthWord(inputLines.get(n+1), 2)),
+                Long.parseLong(StringUtils.chop(getNthWord(inputLines.get(n+1), 4))),
+                new Bitrate(
+                        Integer.getInteger(getNthWord(inputLines.get(n+1), 6)),
+                        getNthWord(inputLines.get(n+1), 7)
+                ),
+                null,
+                null
+
+        )));
+
         // TODO: Resolver problema de ejecución en Linux
 
     }
