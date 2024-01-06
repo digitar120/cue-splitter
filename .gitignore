@@ -1,3 +1,5 @@
+src/main/resources/META-INF
+out/
 .idea/
 .attach*	# Archivo que aparece en Linux
 
