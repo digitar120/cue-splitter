@@ -1,4 +1,4 @@
-package org.digitar120.command;
+package org.digitar120;
 
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.*;
@@ -9,23 +9,20 @@ import java.io.*;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.digitar120.util.UtilityMethods.*;
 
 @CommandLine.Command(
-        name = "Separate CUE file",
-        description = "Separates a music file into its separate tracks, according to the given CUE file"
+        name = "CUEFileTool",
+        description = "CUE file multitool"
 )
-public class SeparateCueFile implements Runnable{
+public class CueSplitter implements Runnable{
     static boolean isWindows = System.getProperty("os.name")
             .toLowerCase()
             .startsWith("windows");
@@ -34,7 +31,7 @@ public class SeparateCueFile implements Runnable{
     private String cueFilePath;
 
     public static void main (String[] args){
-        new CommandLine(new SeparateCueFile()).execute(args);
+        new CommandLine(new CueSplitter()).execute(args);
     }
 
     @Override
@@ -60,19 +57,40 @@ public class SeparateCueFile implements Runnable{
 
         executeFFprobe(fileAbsolutePath).forEach(System.out::println);
 
-        /*
-        List<String> inputLines = getInputLines(fileAbsolutePath);
+        List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
-        // Guardar índices de las líneas en las que comienza una nueva definición de Input
-        List<Integer> inputLineIndexes = new ArrayList<>();
-        inputLineIndexes.add(0);
-        for(int i = 0; i < inputLines.size(); i++){
-            if (getFirstWord(inputLines.get(i)).equals("Input")){
-                inputLineIndexes.add(i);
+
+
+        List<FileStreamInput> fileMetadata = new ArrayList<>();
+        int inputCount = -1;
+        for(int i = 0; i < ffprobeOutput.size(); i++){
+            String line = ffprobeOutput.get(i);
+            switch (getFirstWord(line)){
+                case "Input":
+                    inputCount++;
+                    fileMetadata.add(new FileStreamInput(
+                            inputCount,
+                            StringUtils.chop(getNthWord(line, 2))
+                    ));
+                    break;
+
+                case "Duration:":
+                    String durationColumn = StringUtils.chop(getNthWord(line, 1));
+
+                    fileMetadata.get(inputCount).setDuration(LocalTime.parse(durationColumn));
+                    fileMetadata.get(inputCount).setStartTime(LocalTime.MIN.plus(Long.parseLong(StringUtils.chop(getNthWord(line,3))), ChronoUnit.SECONDS));
+                    fileMetadata.get(inputCount).setBitrate(new Bitrate(
+                            Integer.parseInt(getNthWord(line, 5)),
+                            getNthWord(line, 6)
+                    ));
+                    break;
+                case "Chapter":
+                        break;
             }
         }
 
-         */
+        System.out.println(fileMetadata);
+
 
         // TODO Parsear capítulos
         /*
@@ -97,14 +115,23 @@ public class SeparateCueFile implements Runnable{
 
     }
 
+    private static List<Integer> getInputIndexes(List<String> input){
+        // Guardar índices de las líneas en las que comienza una nueva definición de Input
+        List<Integer> inputLineIndexes = new ArrayList<>();
+        for(int i = 0; i < input.size(); i++){
+            if (getFirstWord(input.get(i)).equals("Input")){
+                inputLineIndexes.add(i);
+            }
+        }
+        return inputLineIndexes;
+    }
+
     private static List<String> getInputLines(String fileAbsolutePath) {
         List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
         int beginningLine = getInputBeginningLine(ffprobeOutput);
         return ffprobeOutput.stream().skip(beginningLine).collect(Collectors.toList());
     }
-
-
 
     private static int getInputBeginningLine(List<String> input){
         int i = 0;
