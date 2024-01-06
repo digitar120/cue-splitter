@@ -11,6 +11,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,6 +58,9 @@ public class SeparateCueFile implements Runnable{
                 + cueFile.getFileName();
 
 
+        executeFFprobe(fileAbsolutePath).forEach(System.out::println);
+
+        /*
         List<String> inputLines = getInputLines(fileAbsolutePath);
 
         // Guardar índices de las líneas en las que comienza una nueva definición de Input
@@ -68,7 +72,10 @@ public class SeparateCueFile implements Runnable{
             }
         }
 
+         */
+
         // TODO Parsear capítulos
+        /*
         List<FileStreamInput> streamInputs = new ArrayList<>();
         inputLineIndexes.forEach(n -> streamInputs.add(new FileStreamInput(
                 n,
@@ -83,6 +90,8 @@ public class SeparateCueFile implements Runnable{
                 null
 
         )));
+
+         */
 
         // TODO: Resolver problema de ejecución en Linux
 
@@ -117,11 +126,11 @@ public class SeparateCueFile implements Runnable{
     private static List<String> executeFFprobe(String absoluteFilePath){
         ProcessBuilder builder = defineFFprobeCommand(new File(absoluteFilePath).getParent(), absoluteFilePath);
 
+        printBuilderCommand(builder);
+
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
             Process process = builder.start();
-
-            printBuilderCommand(builder);
 
             List<String> accumulatedOutput = new ArrayList<>();
             StreamGobbler streamGobbler = new StreamGobbler(process.getErrorStream(), accumulatedOutput::add);
@@ -169,15 +178,15 @@ public class SeparateCueFile implements Runnable{
         ProcessBuilder builder = new ProcessBuilder();
         builder.directory(new File(workingDirectory));
 
+        System.out.println(transformPathSpaces(filePath));
+
 
         builder.command(
-                isWindows ? "powershell.exe" : "bash",
-                isWindows ? "-Command" : "",
-                // TODO sh requiere encerrar el argumento de "-c" entre comillas dobles
-                isWindows ? "ffprobe.exe" : "ffprobe",
-                "-v",
-                "verbose",
-                isWindows ? ("'" + filePath + "'") : (transformPathSpaces(filePath) + "")
+                isWindows ? "powershell.exe" : "sh",
+                isWindows ? "-Command" : "-c",
+                isWindows ?
+                        ("ffprobe.exe -v verbose " + "'" + filePath + "'") :
+                        ("ffprobe -v verbose \"" + filePath + "\"")
         );
         return builder;
     }
