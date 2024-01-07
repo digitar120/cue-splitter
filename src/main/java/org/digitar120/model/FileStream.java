@@ -1,9 +1,6 @@
 package org.digitar120.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -15,15 +12,20 @@ import static org.digitar120.util.UtilityMethods.*;
 @Getter
 @Setter
 @ToString
+@AllArgsConstructor
 public class FileStream {
+    private int streamIndex;
     private String type;
+    private StreamContainer streamContainer;
     private String duration;
     private String encoder;
     private String date;
     private String pURL;
-    private List<String> synopsis = new ArrayList<>();
+    private List<String> synopsis;
     private String comment;
-    private List<FileChapter> chapters = new ArrayList<>();
+    private List<FileChapter> chapters;
+
+
 
     private void parseChapters(List<String> input){
         // Asume que que input es el contenido de la sección "Chapters"

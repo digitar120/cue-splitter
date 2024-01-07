@@ -63,6 +63,7 @@ public class CueSplitter implements Runnable{
 
         List<FileStreamInput> fileMetadata = new ArrayList<>();
         int inputCount = -1;
+        int fileStreamCount = -1;
         for(int i = 0; i < ffprobeOutput.size(); i++){
             String line = ffprobeOutput.get(i);
             switch (getFirstWord(line)){
@@ -78,7 +79,7 @@ public class CueSplitter implements Runnable{
                     String durationColumn = StringUtils.chop(getNthWord(line, 1));
 
                     fileMetadata.get(inputCount).setDuration(LocalTime.parse(durationColumn));
-                    fileMetadata.get(inputCount).setStartTime(LocalTime.MIN.plus(Long.parseLong(StringUtils.chop(getNthWord(line,3))), ChronoUnit.SECONDS));
+                    fileMetadata.get(inputCount).setStartTime(LocalTime.MIN); //TODO parsear
                     fileMetadata.get(inputCount).setBitrate(new Bitrate(
                             Integer.parseInt(getNthWord(line, 5)),
                             getNthWord(line, 6)
@@ -86,6 +87,39 @@ public class CueSplitter implements Runnable{
                     break;
                 case "Chapter":
                         break;
+
+                case "Stream":
+                    fileStreamCount++;
+                    String streamIndexColumn = getNthWord(line, 1);
+
+                    int streamIndex;
+                    if (streamIndexColumn.contains("(")){
+                        streamIndex = Integer.parseInt(
+                                streamIndexColumn.substring(
+                                        StringUtils.indexOf(streamIndexColumn, ":") +1,
+                                        StringUtils.indexOf(streamIndexColumn, "(")
+                                )
+                        );
+                    } else {
+                        streamIndex = Integer.parseInt(StringUtils.chop(streamIndexColumn.substring(StringUtils.indexOf(streamIndexColumn, ":") +1)));
+                    }
+
+                    fileMetadata.get(inputCount).getFileStreams().add(new FileStream(
+                            streamIndex,
+
+                            StringUtils.chop(getNthWord(line, 2)),
+                            new StreamContainer(StringUtils.chop(getNthWord(line, 3))),
+                            "",
+                            "",
+                            "",
+                            "",
+                            new ArrayList<>(),
+                            "",
+                            new ArrayList<>()
+                    ));
+
+                    break;
+
             }
         }
 

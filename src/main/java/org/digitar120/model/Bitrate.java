@@ -1,8 +1,10 @@
 package org.digitar120.model;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class Bitrate {
     private Integer bitrate;
     private BitrateUnit bitrateUnit;
