@@ -7,6 +7,7 @@ import org.digitar120.model.StreamContainer;
 @Setter
 @ToString
 @AllArgsConstructor
+@NoArgsConstructor
 public class PictureStream extends StreamContainer {
     private String format;
     private int referencedFrameAmount;

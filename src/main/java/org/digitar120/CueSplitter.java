@@ -2,6 +2,7 @@ package org.digitar120;
 
 import org.apache.commons.lang3.StringUtils;
 import org.digitar120.model.*;
+import org.digitar120.model.streamTypes.PictureStream;
 import org.digitar120.streamGobbler.StreamGobbler;
 import picocli.CommandLine;
 
@@ -92,6 +93,7 @@ public class CueSplitter implements Runnable{
                     fileStreamCount++;
                     String streamIndexColumn = getNthWord(line, 1);
 
+                    // Índice del stream
                     int streamIndex;
                     if (streamIndexColumn.contains("(")){
                         streamIndex = Integer.parseInt(
@@ -104,11 +106,32 @@ public class CueSplitter implements Runnable{
                         streamIndex = Integer.parseInt(StringUtils.chop(streamIndexColumn.substring(StringUtils.indexOf(streamIndexColumn, ":") +1)));
                     }
 
+                    // Adquisición de tipo
+                    StreamContainer streamContainer = new StreamContainer(StringUtils.chop(getNthWord(line, 3)));
+                    String streamContainerFormat = StringUtils.chop(getNthWord(line, 3));
+                    PictureStream pictureStream = new PictureStream();
+
+                    System.out.println(streamContainerFormat);
+
+                    if (streamContainerFormat.contains("png") ||
+                    streamContainerFormat.contains("jpg") ||
+                    streamContainerFormat.contains("jpeg")){
+                        pictureStream = new PictureStream(
+                                streamContainerFormat,
+                                Integer.parseInt(getNthWord(line, 4)),
+                                StringUtils.chop(getNthWord(line, 7)),
+                                StringUtils.chop(getNthWord(line, 8)),
+                                getNthWord(line, 9),
+                                getNthWord(line, 11),
+                                line.contains("(attached pic)")
+                        );
+                    }
+
                     fileMetadata.get(inputCount).getFileStreams().add(new FileStream(
                             streamIndex,
 
                             StringUtils.chop(getNthWord(line, 2)),
-                            new StreamContainer(StringUtils.chop(getNthWord(line, 3))),
+                            pictureStream,
                             "",
                             "",
                             "",
@@ -123,7 +146,7 @@ public class CueSplitter implements Runnable{
             }
         }
 
-        System.out.println(fileMetadata);
+        fileMetadata.get(0).getFileStreams().forEach(element -> System.out.println(element.getStreamContainer()));
 
 
         // TODO Parsear capítulos
