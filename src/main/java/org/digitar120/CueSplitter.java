@@ -56,6 +56,18 @@ public class CueSplitter implements Runnable{
                 + cueFile.getFileName();
 
 
+        List<String> command = new ArrayList<>();
+        command.add(isWindows ? "powershell.exe" : "ffprobe");
+        command.add(isWindows ? "-Command" : "-c");
+        command.add(isWindows ?
+                ("ffprobe.exe -v verbose " + "'" + fileAbsolutePath + "'") :
+                ("ffprobe -v verbose \"" + fileAbsolutePath + "\""));
+
+        ProcessBuilder testBuilder = defineCommand(workingDirectory, command.toArray(new String[0]));
+        System.out.println("TEST");
+        printBuilderCommand(testBuilder);
+
+
         List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
 
@@ -257,6 +269,15 @@ public class CueSplitter implements Runnable{
             }
 
         }
+    }
+
+    private static ProcessBuilder defineCommand(String workingDirectory, String[] commandContents){
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.directory(new File(workingDirectory));
+
+        builder.command(commandContents);
+
+        return builder;
     }
 
     private static ProcessBuilder defineFFprobeCommand(String workingDirectory, String filePath){
