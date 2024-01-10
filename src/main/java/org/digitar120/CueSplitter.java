@@ -56,12 +56,37 @@ public class CueSplitter implements Runnable{
                 + cueFile.getFileName();
 
 
-        executeFFprobe(fileAbsolutePath).forEach(System.out::println);
-
         List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
 
+        List<FileStreamInput> fileMetadata = parseFileMetadata(ffprobeOutput);
 
+
+        // TODO Parsear capítulos
+        /*
+        List<FileStreamInput> streamInputs = new ArrayList<>();
+        inputLineIndexes.forEach(n -> streamInputs.add(new FileStreamInput(
+                n,
+                StringUtils.chop(getNthWord(inputLines.get(n), 3)),
+                StringUtils.chop(getNthWord(inputLines.get(n+1), 2)),
+                Long.parseLong(StringUtils.chop(getNthWord(inputLines.get(n+1), 4))),
+                new Bitrate(
+                        Integer.getInteger(getNthWord(inputLines.get(n+1), 6)),
+                        getNthWord(inputLines.get(n+1), 7)
+                ),
+                null,
+                null
+
+        )));
+
+         */
+
+        // TODO: Resolver problema de ejecución en Linux
+
+    }
+
+    private static List<FileStreamInput> parseFileMetadata(List<String> ffprobeOutput){
+        // TODO WIP
         List<FileStreamInput> fileMetadata = new ArrayList<>();
         int inputCount = -1;
         int fileStreamCount = -1;
@@ -87,7 +112,7 @@ public class CueSplitter implements Runnable{
                     ));
                     break;
                 case "Chapter":
-                        break;
+                    break;
 
                 case "Stream":
                     fileStreamCount++;
@@ -111,11 +136,10 @@ public class CueSplitter implements Runnable{
                     String streamContainerFormat = StringUtils.chop(getNthWord(line, 3));
                     PictureStream pictureStream = new PictureStream();
 
-                    System.out.println(streamContainerFormat);
 
                     if (streamContainerFormat.contains("png") ||
-                    streamContainerFormat.contains("jpg") ||
-                    streamContainerFormat.contains("jpeg")){
+                            streamContainerFormat.contains("jpg") ||
+                            streamContainerFormat.contains("jpeg")){
                         pictureStream = new PictureStream(
                                 streamContainerFormat,
                                 Integer.parseInt(getNthWord(line, 4)),
@@ -146,30 +170,7 @@ public class CueSplitter implements Runnable{
             }
         }
 
-        fileMetadata.get(0).getFileStreams().forEach(element -> System.out.println(element.getStreamContainer()));
-
-
-        // TODO Parsear capítulos
-        /*
-        List<FileStreamInput> streamInputs = new ArrayList<>();
-        inputLineIndexes.forEach(n -> streamInputs.add(new FileStreamInput(
-                n,
-                StringUtils.chop(getNthWord(inputLines.get(n), 3)),
-                StringUtils.chop(getNthWord(inputLines.get(n+1), 2)),
-                Long.parseLong(StringUtils.chop(getNthWord(inputLines.get(n+1), 4))),
-                new Bitrate(
-                        Integer.getInteger(getNthWord(inputLines.get(n+1), 6)),
-                        getNthWord(inputLines.get(n+1), 7)
-                ),
-                null,
-                null
-
-        )));
-
-         */
-
-        // TODO: Resolver problema de ejecución en Linux
-
+        return fileMetadata;
     }
 
     private static List<Integer> getInputIndexes(List<String> input){
