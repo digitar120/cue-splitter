@@ -56,22 +56,10 @@ public class CueSplitter implements Runnable{
                 + cueFile.getFileName();
 
 
-        List<String> command = new ArrayList<>();
-        command.add(isWindows ? "powershell.exe" : "ffprobe");
-        command.add(isWindows ? "-Command" : "-c");
-        command.add(isWindows ?
-                ("ffprobe.exe -v verbose " + "'" + fileAbsolutePath + "'") :
-                ("ffprobe -v verbose \"" + fileAbsolutePath + "\""));
-
-        ProcessBuilder testBuilder = defineCommand(workingDirectory, command.toArray(new String[0]));
-        System.out.println("TEST");
-        printBuilderCommand(testBuilder);
-
 
         List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
-
-        List<FileStreamInput> fileMetadata = parseFileMetadata(ffprobeOutput);
+        System.out.println(parseFileMetadata(ffprobeOutput).get(0).getFileStreams().get(1));
 
 
         // TODO Parsear capítulos
@@ -148,15 +136,20 @@ public class CueSplitter implements Runnable{
                     String streamContainerFormat = StringUtils.chop(getNthWord(line, 3));
                     PictureStream pictureStream = new PictureStream();
 
-
-                    if (streamContainerFormat.contains("png") ||
+                    boolean isAPicture = streamContainerFormat.contains("png") ||
                             streamContainerFormat.contains("jpg") ||
-                            streamContainerFormat.contains("jpeg")){
+                            streamContainerFormat.contains("jpeg");
+
+                    System.out.println(line);
+                    // TODO reaccionar al contenido de la línea referente al formato de color
+
+
+                    if (isAPicture){
                         pictureStream = new PictureStream(
                                 streamContainerFormat,
                                 Integer.parseInt(getNthWord(line, 4)),
                                 StringUtils.chop(getNthWord(line, 7)),
-                                StringUtils.chop(getNthWord(line, 8)),
+                                getNthWord(line, 8),
                                 getNthWord(line, 9),
                                 getNthWord(line, 11),
                                 line.contains("(attached pic)")
@@ -167,7 +160,7 @@ public class CueSplitter implements Runnable{
                             streamIndex,
 
                             StringUtils.chop(getNthWord(line, 2)),
-                            pictureStream,
+                            parseStreamInformation(line),
                             "",
                             "",
                             "",
@@ -183,6 +176,33 @@ public class CueSplitter implements Runnable{
         }
 
         return fileMetadata;
+    }
+
+    private static StreamContainer parseStreamInformation (String streamInformationLine){
+
+        // Adquisición de tipo
+        StreamContainer streamContainer = new StreamContainer(StringUtils.chop(getNthWord(streamInformationLine, 3)));
+        String streamContainerFormat = StringUtils.chop(getNthWord(streamInformationLine, 3));
+
+        boolean isAPicture = streamContainerFormat.contains("png") ||
+                streamContainerFormat.contains("jpg") ||
+                streamContainerFormat.contains("jpeg");
+
+
+
+        if (isAPicture){
+           return new PictureStream(
+                    streamContainerFormat,
+                    Integer.parseInt(getNthWord(streamInformationLine, 4)),
+                    StringUtils.chop(getNthWord(streamInformationLine, 7)),
+                    StringUtils.chop(getNthWord(streamInformationLine, 8)),
+                    getNthWord(streamInformationLine, 9),
+                    getNthWord(streamInformationLine, 11),
+                   streamInformationLine.contains("(attached pic)")
+            );
+        } else {
+            return new StreamContainer(StringUtils.chop(getNthWord(streamInformationLine, 3)));
+        }
     }
 
     private static List<Integer> getInputIndexes(List<String> input){
@@ -269,15 +289,6 @@ public class CueSplitter implements Runnable{
             }
 
         }
-    }
-
-    private static ProcessBuilder defineCommand(String workingDirectory, String[] commandContents){
-        ProcessBuilder builder = new ProcessBuilder();
-        builder.directory(new File(workingDirectory));
-
-        builder.command(commandContents);
-
-        return builder;
     }
 
     private static ProcessBuilder defineFFprobeCommand(String workingDirectory, String filePath){
