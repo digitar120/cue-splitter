@@ -112,4 +112,8 @@ public final class UtilityMethods {
         // /carpeta\ 1/archivo\ 1
         return StringUtils.replace(path, " ", "\\ ");
     }
+
+    public static String getChoppedNthWord (String string, int column){
+        return StringUtils.chop(getNthWord(string, column));
+    }
 }

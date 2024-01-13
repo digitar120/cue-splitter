@@ -10,12 +10,15 @@ import java.io.*;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.digitar120.util.UtilityMethods.*;
 
@@ -92,17 +95,18 @@ public class CueSplitter implements Runnable{
         int fileStreamCount = -1;
         for(int i = 0; i < ffprobeOutput.size(); i++){
             String line = ffprobeOutput.get(i);
+
             switch (getFirstWord(line)){
                 case "Input":
                     inputCount++;
                     fileMetadata.add(new FileStreamInput(
                             inputCount,
-                            StringUtils.chop(getNthWord(line, 2))
+                            getChoppedNthWord(line, 2)
                     ));
                     break;
 
                 case "Duration:":
-                    String durationColumn = StringUtils.chop(getNthWord(line, 1));
+                    String durationColumn = getChoppedNthWord(line, 1);
 
                     fileMetadata.get(inputCount).setDuration(LocalTime.parse(durationColumn));
                     fileMetadata.get(inputCount).setStartTime(LocalTime.MIN); //TODO parsear
@@ -131,36 +135,13 @@ public class CueSplitter implements Runnable{
                         streamIndex = Integer.parseInt(StringUtils.chop(streamIndexColumn.substring(StringUtils.indexOf(streamIndexColumn, ":") +1)));
                     }
 
-                    // Adquisición de tipo
-                    StreamContainer streamContainer = new StreamContainer(StringUtils.chop(getNthWord(line, 3)));
-                    String streamContainerFormat = StringUtils.chop(getNthWord(line, 3));
-                    PictureStream pictureStream = new PictureStream();
 
-                    boolean isAPicture = streamContainerFormat.contains("png") ||
-                            streamContainerFormat.contains("jpg") ||
-                            streamContainerFormat.contains("jpeg");
-
-                    System.out.println(line);
-                    // TODO reaccionar al contenido de la línea referente al formato de color
-
-
-                    if (isAPicture){
-                        pictureStream = new PictureStream(
-                                streamContainerFormat,
-                                Integer.parseInt(getNthWord(line, 4)),
-                                StringUtils.chop(getNthWord(line, 7)),
-                                getNthWord(line, 8),
-                                getNthWord(line, 9),
-                                getNthWord(line, 11),
-                                line.contains("(attached pic)")
-                        );
-                    }
+                    String streamContainerFormat = getChoppedNthWord(line, 3);
 
                     fileMetadata.get(inputCount).getFileStreams().add(new FileStream(
                             streamIndex,
-
-                            StringUtils.chop(getNthWord(line, 2)),
-                            parseStreamInformation(line),
+                            getChoppedNthWord(line, 2),
+                            parseBasicStreamInformation(line),
                             "",
                             "",
                             "",
@@ -170,6 +151,21 @@ public class CueSplitter implements Runnable{
                             new ArrayList<>()
                     ));
 
+                    FileStream fileStream = new FileStream(
+                            streamIndex,
+                            getChoppedNthWord(line, 2),
+                            parseBasicStreamInformation(line),
+                            "",
+                            "",
+                            "",
+                            "",
+                            new ArrayList<>(),
+                            "",
+                            new ArrayList<>()
+                    );
+
+                    parseFileStreamMetadata(fileStream, ffprobeOutput, line);
+
                     break;
 
             }
@@ -178,15 +174,39 @@ public class CueSplitter implements Runnable{
         return fileMetadata;
     }
 
-    private static StreamContainer parseStreamInformation (String streamInformationLine){
+    private static void parseFileStreamMetadata(FileStream targetFileStream, List<String> ffprobeOutput, String startingLine){
+        Integer lineIndex = ffprobeOutput.indexOf(startingLine) +1;
+
+        String line = ffprobeOutput.get(lineIndex).trim();
+        while(!line.contains("Stream ") && !lineIndex.equals(ffprobeOutput.size()-1)){
+            lineIndex++;
+
+            switch (getFirstWord(ffprobeOutput.get(lineIndex).trim())){
+                case "comment":
+
+                    System.out.println(line);
+                    //System.out.println(line.substring(StringUtils.indexOf(line, ":")));
+                    break;
+            }
+        }
+    }
+
+    private static StreamContainer parseBasicStreamInformation (String streamInformationLine){
+
+        // TODO rearmar eliminando comas al principio
 
         // Adquisición de tipo
-        StreamContainer streamContainer = new StreamContainer(StringUtils.chop(getNthWord(streamInformationLine, 3)));
-        String streamContainerFormat = StringUtils.chop(getNthWord(streamInformationLine, 3));
+        StreamContainer streamContainer = new StreamContainer(getChoppedNthWord(streamInformationLine, 3));
+        String streamContainerFormat = getChoppedNthWord(streamInformationLine, 3);
 
         boolean isAPicture = streamContainerFormat.contains("png") ||
                 streamContainerFormat.contains("jpg") ||
                 streamContainerFormat.contains("jpeg");
+
+        String eigthAndNinthColumns = (getNthWord(streamInformationLine, 7) + " " + getChoppedNthWord(streamInformationLine, 8));
+        System.out.println(eigthAndNinthColumns);
+
+        boolean colorFormatInformationIsComplete = isAPicture && !(eigthAndNinthColumns.contains("unknown"));
 
 
 
@@ -194,14 +214,17 @@ public class CueSplitter implements Runnable{
            return new PictureStream(
                     streamContainerFormat,
                     Integer.parseInt(getNthWord(streamInformationLine, 4)),
-                    StringUtils.chop(getNthWord(streamInformationLine, 7)),
-                    StringUtils.chop(getNthWord(streamInformationLine, 8)),
-                    getNthWord(streamInformationLine, 9),
-                    getNthWord(streamInformationLine, 11),
+                    colorFormatInformationIsComplete ?
+                            eigthAndNinthColumns : getChoppedNthWord(streamInformationLine, 7),
+                    // Ejemplo:
+                   // Stream #0:1: Video: png, 1 reference frame, rgb24(pc, gbr/unknown/unknown), 1280x720, 90k tbr, 90k tbn (attached pic)
+                    colorFormatInformationIsComplete ? getChoppedNthWord(streamInformationLine, 8) : getChoppedNthWord(streamInformationLine, 9),
+                    colorFormatInformationIsComplete ? getNthWord(streamInformationLine, 9) : getNthWord(streamInformationLine, 10),
+                    colorFormatInformationIsComplete ? getNthWord(streamInformationLine, 11) : getNthWord(streamInformationLine, 12),
                    streamInformationLine.contains("(attached pic)")
             );
         } else {
-            return new StreamContainer(StringUtils.chop(getNthWord(streamInformationLine, 3)));
+            return new StreamContainer(getChoppedNthWord(streamInformationLine, 3));
         }
     }
 
