@@ -62,29 +62,7 @@ public class CueSplitter implements Runnable{
 
         List<String> ffprobeOutput = executeFFprobe(fileAbsolutePath);
 
-        System.out.println(parseFileMetadata(ffprobeOutput).get(0).getFileStreams().get(1));
-
-
-        // TODO Parsear capítulos
-        /*
-        List<FileStreamInput> streamInputs = new ArrayList<>();
-        inputLineIndexes.forEach(n -> streamInputs.add(new FileStreamInput(
-                n,
-                StringUtils.chop(getNthWord(inputLines.get(n), 3)),
-                StringUtils.chop(getNthWord(inputLines.get(n+1), 2)),
-                Long.parseLong(StringUtils.chop(getNthWord(inputLines.get(n+1), 4))),
-                new Bitrate(
-                        Integer.getInteger(getNthWord(inputLines.get(n+1), 6)),
-                        getNthWord(inputLines.get(n+1), 7)
-                ),
-                null,
-                null
-
-        )));
-
-         */
-
-        // TODO: Resolver problema de ejecución en Linux
+        System.out.println(parseFileMetadata(ffprobeOutput));
 
     }
 
@@ -138,18 +116,7 @@ public class CueSplitter implements Runnable{
 
                     String streamContainerFormat = getChoppedNthWord(line, 3);
 
-                    fileMetadata.get(inputCount).getFileStreams().add(new FileStream(
-                            streamIndex,
-                            getChoppedNthWord(line, 2),
-                            parseBasicStreamInformation(line),
-                            "",
-                            "",
-                            "",
-                            "",
-                            new ArrayList<>(),
-                            "",
-                            new ArrayList<>()
-                    ));
+
 
                     FileStream fileStream = new FileStream(
                             streamIndex,
@@ -159,12 +126,15 @@ public class CueSplitter implements Runnable{
                             "",
                             "",
                             "",
+                            "",
                             new ArrayList<>(),
                             "",
                             new ArrayList<>()
                     );
 
-                    parseFileStreamMetadata(fileStream, ffprobeOutput, line);
+                    System.out.println(parseFileStreamMetadata(ffprobeOutput, line));
+
+                    fileMetadata.get(inputCount).getFileStreams().add(fileStream);
 
                     break;
 
@@ -174,21 +144,60 @@ public class CueSplitter implements Runnable{
         return fileMetadata;
     }
 
-    private static void parseFileStreamMetadata(FileStream targetFileStream, List<String> ffprobeOutput, String startingLine){
+    private static FileStream parseFileStreamMetadata(List<String> ffprobeOutput, String startingLine){
+        FileStream fileStream = new FileStream();
+
         Integer lineIndex = ffprobeOutput.indexOf(startingLine) +1;
 
         String line = ffprobeOutput.get(lineIndex).trim();
+        String firstWord;
         while(!line.contains("Stream ") && !lineIndex.equals(ffprobeOutput.size()-1)){
             lineIndex++;
+            line = ffprobeOutput.get(lineIndex);
+            firstWord = getFirstWord(line.trim());
+            System.out.println(firstWord);
 
-            switch (getFirstWord(ffprobeOutput.get(lineIndex).trim())){
+            switch (firstWord){
                 case "comment":
+                    break;
 
-                    System.out.println(line);
-                    //System.out.println(line.substring(StringUtils.indexOf(line, ":")));
+                case "encoder":
+                    fileStream.setEncoder(
+                            getStringAfterSequence(line, ": ")
+                    );
+                    break;
+
+                case "title":
+                    fileStream.setTitle(
+                            getStringAfterSequence(line, ": ")
+                    );
+                    break;
+
+                case "date":
+                    fileStream.setDate(
+                            getStringAfterSequence(line, ": ")
+                    );
+                    break;
+
+                case "purl":
+                    fileStream.setPURL(
+                            getStringAfterSequence(line, ": ")
+                    );
+                    break;
+
+                case "synopsis":
+                    fileStream.getSynopsis().add(getStringAfterSequence(line, ": "));
+                    while (!firstWord.equals(":")){
+                        lineIndex++;
+                        line = ffprobeOutput.get(lineIndex);
+                        firstWord = getFirstWord(ffprobeOutput.get(lineIndex).trim());
+
+                        fileStream.getSynopsis().add(getStringAfterSequence(line, ": "));
+                    }
                     break;
             }
         }
+        return fileStream;
     }
 
     private static StreamContainer parseBasicStreamInformation (String streamInformationLine){
@@ -204,7 +213,6 @@ public class CueSplitter implements Runnable{
                 streamContainerFormat.contains("jpeg");
 
         String eigthAndNinthColumns = (getNthWord(streamInformationLine, 7) + " " + getChoppedNthWord(streamInformationLine, 8));
-        System.out.println(eigthAndNinthColumns);
 
         boolean colorFormatInformationIsComplete = isAPicture && !(eigthAndNinthColumns.contains("unknown"));
 

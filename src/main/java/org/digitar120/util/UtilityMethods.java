@@ -116,4 +116,10 @@ public final class UtilityMethods {
     public static String getChoppedNthWord (String string, int column){
         return StringUtils.chop(getNthWord(string, column));
     }
+
+    public static String getStringAfterSequence(String string, String sequence){
+        return string.substring(
+                StringUtils.indexOf(string, sequence)
+        );
+    }
 }

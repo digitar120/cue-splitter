@@ -19,9 +19,10 @@ public class FileStream {
     private StreamContainer streamContainer;
     private String duration;
     private String encoder;
+    private String title;
     private String date;
     private String pURL;
-    private List<String> synopsis;
+    private List<String> synopsis = new ArrayList<>();
     private String comment;
     private List<FileChapter> chapters;
 
