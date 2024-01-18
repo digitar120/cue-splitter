@@ -155,10 +155,19 @@ public class CueSplitter implements Runnable{
             lineIndex++;
             line = ffprobeOutput.get(lineIndex);
             firstWord = getFirstWord(line.trim());
-            System.out.println(firstWord);
+
+            System.out.println(line);
 
             switch (firstWord){
+                case "duration":
+                    fileStream.setDuration(
+                            getStringAfterSequence(line, ":")
+                    );
+                    break;
                 case "comment":
+                    fileStream.setComment(
+                            getStringAfterSequence(line, ":")
+                    );
                     break;
 
                 case "encoder":
@@ -186,14 +195,19 @@ public class CueSplitter implements Runnable{
                     break;
 
                 case "synopsis":
-                    fileStream.getSynopsis().add(getStringAfterSequence(line, ": "));
-                    while (!firstWord.equals(":")){
-                        lineIndex++;
-                        line = ffprobeOutput.get(lineIndex);
-                        firstWord = getFirstWord(ffprobeOutput.get(lineIndex).trim());
+                    String synopsisLine = ffprobeOutput.get(lineIndex);
+                    fileStream.getSynopsis().add(getStringAfterSequence(synopsisLine, ":").trim());
 
-                        fileStream.getSynopsis().add(getStringAfterSequence(line, ": "));
+                    lineIndex++;
+                    synopsisLine = ffprobeOutput.get(lineIndex);
+                    while(getFirstWord(synopsisLine).equals(":")){
+                        fileStream.getSynopsis().add(getStringAfterSequence(synopsisLine, ":").trim());
+
+                        lineIndex++;
+                        synopsisLine = ffprobeOutput.get(lineIndex);
                     }
+
+
                     break;
             }
         }

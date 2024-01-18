@@ -119,7 +119,7 @@ public final class UtilityMethods {
 
     public static String getStringAfterSequence(String string, String sequence){
         return string.substring(
-                StringUtils.indexOf(string, sequence)
+                StringUtils.indexOf(string, sequence)+1
         );
     }
 }
